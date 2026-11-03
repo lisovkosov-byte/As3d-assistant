@@ -84,6 +84,23 @@ class AstridUI:
         )
         btn_settings.pack(side="right", padx=10, pady=6)
 
+        btn_donate = tk.Button(
+            header_frame,
+            text="[ ☕ ДОНАТ ]",
+            font=FONT_BOLD,
+            fg=ACCENT_YELLOW,
+            bg=BG_DARK,
+            activebackground=ACCENT_YELLOW,
+            activeforeground=BG_DARK,
+            bd=1,
+            relief="solid",
+            command=self._open_donate,
+            cursor="hand2",
+            padx=8,
+            pady=4
+        )
+        btn_donate.pack(side="right", padx=(0, 5), pady=6)
+
         self.btn_tts_toggle = tk.Button(
             header_frame,
             text="[ 🔊 ОЗВУЧКА: ВКЛ ]",
@@ -513,6 +530,12 @@ class AstridUI:
             color = TEXT_DIM
 
         self.root.after(0, lambda: self.status_lbl.config(text=f"● {text}", fg=color))
+
+    def _open_donate(self):
+        import webbrowser
+        donate_url = self.core.config.get("donate_url", "https://donatty.com/").strip() or "https://donatty.com/"
+        self.log_terminal(f"Открытие страницы поддержки: {donate_url}", "action")
+        webbrowser.open(donate_url)
 
     def _on_close(self):
         self.voice.stop_live()
