@@ -1,11 +1,9 @@
 {
   "assistant_name": "Ас3д (Астрид)",
-  "gemini_api_key": "",
-  "theme": "matrix",
-  "voice_enabled": false,
-  "system_prompt": "Ты — Ас3д (Астрид), дружелюбный, сообразительный и слегка ироничный голосовой ассистент. Отвечай кратко, емко, по делу и с легким характером. Если пользователь просит выполнить действие или пресет, подтверждай выполнение.",
-  "provider": "gemini",
-  "api_key": "AQ.Ab8RN6Ib0tpZnQXowNR2JtiGRks1z9uGS8hQUcIbtawbJ0joFQ",
-  "model_name": "gemini-3-flash-preview",
-  "base_url": ""
+  "provider": "openai_compatible",
+  "api_key": "",
+  "base_url": "https://openrouter.ai/api/v1",
+  "model_name": "google/gemma-4-31b-it:free",
+  "system_prompt": "Ты — Ас3д (Астрид), дружелюбная, умная и живая девушка-ассистент в стиле хакерского терминала. Ты верный помощник пользователя. Отвечай кратко, с характером, по делу, без нудных формальностей. Ты умеешь запускать пресеты и открывать программы.",
+  "donate_url": "https://donatty.com/pga"
 }
