@@ -1,0 +1,55 @@
+{
+  "presets": {
+    "youtube": {
+      "title": "YouTube + VPN",
+      "description": "Запуск VPN и открытие YouTube",
+      "triggers": [
+        "ютуб",
+        "youtube",
+        "ютубчик",
+        "видео"
+      ],
+      "actions": [
+        {
+          "type": "notify",
+          "message": "Проверка и запуск VPN..."
+        },
+        {
+          "type": "url",
+          "url": "https://www.youtube.com"
+        }
+      ]
+    },
+    "telegram": {
+      "title": "Telegram",
+      "description": "Запуск Telegram Web",
+      "triggers": [
+        "телеграм",
+        "тг",
+        "телега",
+        "telegram"
+      ],
+      "actions": [
+        {
+          "type": "url",
+          "url": "https://web.telegram.org"
+        }
+      ]
+    },
+    "work": {
+      "title": "Рабочий режим",
+      "description": "Поисковик и рабочая среда",
+      "triggers": [
+        "работа",
+        "поиск",
+        "код"
+      ],
+      "actions": [
+        {
+          "type": "url",
+          "url": "https://google.com"
+        }
+      ]
+    }
+  }
+}

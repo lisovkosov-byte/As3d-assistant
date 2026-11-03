@@ -1,0 +1,18 @@
+# Astrid Assistant - Local user settings and secrets
+config.json
+chat_history.json
+wake_chime.wav
+.env
+*.log
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.spec
+build/
+dist/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
