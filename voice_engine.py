@@ -10,6 +10,13 @@ import edge_tts
 import pygame
 from sound_effects import play_chime
 
+# Устранение бага Windows asyncio с ProactorBasePipeTransport
+if os.name == 'nt':
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    except Exception:
+        pass
+
 # Голос по умолчанию для Астрид (живой женский голос Светлана)
 DEFAULT_VOICE = "ru-RU-SvetlanaNeural"
 
@@ -197,7 +204,12 @@ class VoiceEngine:
                 communicate = edge_tts.Communicate(clean_text, DEFAULT_VOICE)
                 await communicate.save(temp_path)
 
-            asyncio.run(_generate())
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                loop.run_until_complete(_generate())
+            finally:
+                loop.close()
 
             # Воспроизведение через pygame
             pygame.mixer.music.load(temp_path)

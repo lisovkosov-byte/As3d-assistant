@@ -4,6 +4,7 @@ import subprocess
 import time
 import webbrowser
 from typing import Callable, Optional, Dict, Any, List
+import input_automation as ia
 
 PRESETS_FILE = os.path.join(os.path.dirname(__file__), "presets.json")
 
@@ -159,6 +160,36 @@ class PresetsManager:
                     if logger:
                         logger(f"[{idx}/{len(actions)}] Ожидание {sec} сек...", "system")
                     time.sleep(sec)
+
+                elif act_type == "focus":
+                    title = act.get("title", "")
+                    if logger:
+                        logger(f"[{idx}/{len(actions)}] Фокус на окно: '{title}'", "action")
+                    ok = ia.focus_window(title)
+                    if not ok and logger:
+                        logger(f"Окно с названием '{title}' не найдено", "system")
+
+                elif act_type == "key":
+                    key_code = act.get("key", "enter")
+                    if logger:
+                        logger(f"[{idx}/{len(actions)}] Нажатие клавиши: [{key_code.upper()}]", "action")
+                    ia.press_key(key_code)
+
+                elif act_type == "click":
+                    x = act.get("x")
+                    y = act.get("y")
+                    btn = act.get("button", "left")
+                    dbl = act.get("double", False)
+                    coord_str = f"({x}, {y})" if x is not None and y is not None else "текущая позиция"
+                    if logger:
+                        logger(f"[{idx}/{len(actions)}] Клик мыши [{btn}]: {coord_str}", "action")
+                    ia.mouse_click(x, y, button=btn, double=dbl)
+
+                elif act_type == "type":
+                    txt = act.get("text", "")
+                    if logger:
+                        logger(f"[{idx}/{len(actions)}] Ввод текста...", "action")
+                    ia.type_text(txt)
 
                 elif act_type == "notify":
                     msg = act.get("message", "")

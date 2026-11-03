@@ -6,6 +6,8 @@ import os
 from presets_manager import PresetsManager
 from assistant import AstridCore
 from voice_engine import VoiceEngine
+import autostart
+import input_automation as ia
 
 BG_DARK = "#070b07"
 BG_PANEL = "#0c140d"
@@ -621,6 +623,15 @@ class AstridUI:
                     act_listbox.insert("end", f"[{i}] 🌐 Открыть сайт: {a.get('url', '')}")
                 elif t == "wait":
                     act_listbox.insert("end", f"[{i}] ⏳ Пауза: {a.get('seconds', 1)} сек")
+                elif t == "focus":
+                    act_listbox.insert("end", f"[{i}] 🪟 Фокус окна: '{a.get('title', '')}'")
+                elif t == "key":
+                    act_listbox.insert("end", f"[{i}] ⌨ Клавиша: [{a.get('key', '').upper()}]")
+                elif t == "click":
+                    pos_str = f"X={a.get('x')}, Y={a.get('y')}" if a.get('x') is not None else "текущие координаты"
+                    act_listbox.insert("end", f"[{i}] 🖱 Клик мыши: {pos_str} ({a.get('button', 'left')})")
+                elif t == "type":
+                    act_listbox.insert("end", f"[{i}] 📝 Печать текста: '{a.get('text', '')}'")
                 elif t == "cmd":
                     act_listbox.insert("end", f"[{i}] ⚙ Команда CMD: {a.get('command', '')}")
                 else:
@@ -628,9 +639,9 @@ class AstridUI:
 
         refresh_act_listbox()
 
-        # Кнопки добавления действий
-        btns_row = tk.Frame(act_box_frame, bg=BG_PANEL)
-        btns_row.pack(fill="x", pady=4)
+        # Кнопки действий (Ряд 1: Базовые)
+        btns_row1 = tk.Frame(act_box_frame, bg=BG_PANEL)
+        btns_row1.pack(fill="x", pady=(2, 2))
 
         def add_app_action():
             path = filedialog.askopenfilename(
@@ -656,6 +667,22 @@ class AstridUI:
                 current_actions.append({"type": "wait", "seconds": sec})
                 refresh_act_listbox()
 
+        def move_action_up():
+            sel = act_listbox.curselection()
+            if sel and sel[0] > 0:
+                idx = sel[0]
+                current_actions[idx - 1], current_actions[idx] = current_actions[idx], current_actions[idx - 1]
+                refresh_act_listbox()
+                act_listbox.selection_set(idx - 1)
+
+        def move_action_down():
+            sel = act_listbox.curselection()
+            if sel and sel[0] < len(current_actions) - 1:
+                idx = sel[0]
+                current_actions[idx + 1], current_actions[idx] = current_actions[idx], current_actions[idx + 1]
+                refresh_act_listbox()
+                act_listbox.selection_set(idx + 1)
+
         def remove_selected_action():
             sel = act_listbox.curselection()
             if sel:
@@ -663,17 +690,89 @@ class AstridUI:
                 current_actions.pop(idx)
                 refresh_act_listbox()
 
-        btn_add_app = tk.Button(btns_row, text="+ 💻 Файл / .exe...", font=FONT_SMALL, fg=TEXT_GREEN, bg=BG_DARK, bd=1, relief="solid", command=add_app_action, cursor="hand2")
+        btn_add_app = tk.Button(btns_row1, text="+ 💻 Файл / .exe...", font=FONT_SMALL, fg=TEXT_GREEN, bg=BG_DARK, bd=1, relief="solid", command=add_app_action, cursor="hand2")
         btn_add_app.pack(side="left", padx=2)
 
-        btn_add_url = tk.Button(btns_row, text="+ 🌐 Сайт (URL)...", font=FONT_SMALL, fg=ACCENT_CYAN, bg=BG_DARK, bd=1, relief="solid", command=add_url_action, cursor="hand2")
+        btn_add_url = tk.Button(btns_row1, text="+ 🌐 Сайт (URL)...", font=FONT_SMALL, fg=ACCENT_CYAN, bg=BG_DARK, bd=1, relief="solid", command=add_url_action, cursor="hand2")
         btn_add_url.pack(side="left", padx=2)
 
-        btn_add_wait = tk.Button(btns_row, text="+ ⏳ Пауза...", font=FONT_SMALL, fg=ACCENT_YELLOW, bg=BG_DARK, bd=1, relief="solid", command=add_wait_action, cursor="hand2")
+        btn_add_wait = tk.Button(btns_row1, text="+ ⏳ Пауза...", font=FONT_SMALL, fg=ACCENT_YELLOW, bg=BG_DARK, bd=1, relief="solid", command=add_wait_action, cursor="hand2")
         btn_add_wait.pack(side="left", padx=2)
 
-        btn_rem = tk.Button(btns_row, text="✖ Удалить шаг", font=FONT_SMALL, fg=ACCENT_RED, bg=BG_DARK, bd=1, relief="solid", command=remove_selected_action, cursor="hand2")
+        btn_up = tk.Button(btns_row1, text="▲ Вверх", font=FONT_SMALL, fg=TEXT_WHITE, bg=BG_DARK, bd=1, relief="solid", command=move_action_up, cursor="hand2")
+        btn_up.pack(side="right", padx=2)
+
+        btn_down = tk.Button(btns_row1, text="▼ Вниз", font=FONT_SMALL, fg=TEXT_WHITE, bg=BG_DARK, bd=1, relief="solid", command=move_action_down, cursor="hand2")
+        btn_down.pack(side="right", padx=2)
+
+        btn_rem = tk.Button(btns_row1, text="✖ Удалить шаг", font=FONT_SMALL, fg=ACCENT_RED, bg=BG_DARK, bd=1, relief="solid", command=remove_selected_action, cursor="hand2")
         btn_rem.pack(side="right", padx=2)
+
+        # Ряд 2: Продвинутая автоматизация (Фокус, Клавиша, Клик, Печать)
+        btns_row2 = tk.Frame(act_box_frame, bg=BG_PANEL)
+        btns_row2.pack(fill="x", pady=(2, 6))
+
+        def add_focus_action():
+            title = simpledialog.askstring("Фокус на окно", "Введите часть названия окна (например, Happ или Telegram):", parent=dialog)
+            if title and title.strip():
+                current_actions.append({"type": "focus", "title": title.strip()})
+                refresh_act_listbox()
+
+        def add_key_action():
+            key = simpledialog.askstring("Нажатие клавиши", "Введите клавишу или хоткей:\n(например: enter, space, tab, esc, f11, ctrl+c):", parent=dialog)
+            if key and key.strip():
+                current_actions.append({"type": "key", "key": key.strip().lower()})
+                refresh_act_listbox()
+
+        def add_click_action():
+            # Захват координат через 3 секунды
+            ans = messagebox.askyesno(
+                "Клик мыши",
+                "Хотите захватить координаты курсора автоматически?\n\n"
+                "Если нажмете ДА — у вас будет 3 секунды, чтобы навести мышку на нужную кнопку на экране!\n"
+                "Если нажмете НЕТ — введете X и Y вручную.",
+                parent=dialog
+            )
+            if ans:
+                # Отсчет 3 секунды
+                def capture():
+                    time.sleep(3.0)
+                    cur_x, cur_y = ia.get_current_mouse_pos()
+                    dialog.after(0, lambda: _on_coords_captured(cur_x, cur_y))
+
+                def _on_coords_captured(cx, cy):
+                    current_actions.append({"type": "click", "x": cx, "y": cy, "button": "left"})
+                    refresh_act_listbox()
+                    messagebox.showinfo("Координаты захвачены", f"Координаты клика сохранены: X={cx}, Y={cy}!", parent=dialog)
+
+                threading.Thread(target=capture, daemon=True).start()
+                messagebox.showinfo("Таймер 3 секунды", "Нажмите ОК и СРАЗУ наведите мышку на нужную кнопку на экране!", parent=dialog)
+            else:
+                x_val = simpledialog.askinteger("Координата X", "Введите координату X (или оставьте пустым для текущей):", parent=dialog)
+                y_val = simpledialog.askinteger("Координата Y", "Введите координату Y (или оставьте пустым для текущей):", parent=dialog)
+                current_actions.append({"type": "click", "x": x_val, "y": y_val, "button": "left"})
+                refresh_act_listbox()
+
+        def add_type_action():
+            text_to_type = simpledialog.askstring("Ввод текста", "Введите текст, который нужно напечатать:", parent=dialog)
+            if text_to_type:
+                current_actions.append({"type": "type", "text": text_to_type})
+                refresh_act_listbox()
+
+        lbl_adv = tk.Label(btns_row2, text="[Авто-клики]:", font=FONT_SMALL, fg=TEXT_DIM, bg=BG_PANEL)
+        lbl_adv.pack(side="left", padx=(0, 4))
+
+        btn_focus = tk.Button(btns_row2, text="+ 🪟 Фокус окна...", font=FONT_SMALL, fg=ACCENT_CYAN, bg=BG_DARK, bd=1, relief="solid", command=add_focus_action, cursor="hand2")
+        btn_focus.pack(side="left", padx=2)
+
+        btn_key = tk.Button(btns_row2, text="+ ⌨ Клавиша...", font=FONT_SMALL, fg=TEXT_GREEN, bg=BG_DARK, bd=1, relief="solid", command=add_key_action, cursor="hand2")
+        btn_key.pack(side="left", padx=2)
+
+        btn_click = tk.Button(btns_row2, text="+ 🖱 Клик мыши...", font=FONT_SMALL, fg=ACCENT_YELLOW, bg=BG_DARK, bd=1, relief="solid", command=add_click_action, cursor="hand2")
+        btn_click.pack(side="left", padx=2)
+
+        btn_type = tk.Button(btns_row2, text="+ 📝 Текст...", font=FONT_SMALL, fg=TEXT_WHITE, bg=BG_DARK, bd=1, relief="solid", command=add_type_action, cursor="hand2")
+        btn_type.pack(side="left", padx=2)
 
         # Нижние кнопки
         bottom_row = tk.Frame(dialog, bg=BG_PANEL)
@@ -787,9 +886,23 @@ class AstridUI:
 
         # Системный промпт (Личность Астрид)
         tk.Label(scroll_frame, text="Промпт Личности ('Внушение' для нейросети):", font=FONT_BOLD, fg=TEXT_GREEN, bg=BG_PANEL).pack(anchor="w", pady=(4, 2))
-        prompt_text = tk.Text(scroll_frame, height=6, font=FONT_MONO, bg=BG_INPUT, fg=TEXT_WHITE, insertbackground=TEXT_GREEN, wrap="word", bd=1, relief="solid")
+        prompt_text = tk.Text(scroll_frame, height=5, font=FONT_MONO, bg=BG_INPUT, fg=TEXT_WHITE, insertbackground=TEXT_GREEN, wrap="word", bd=1, relief="solid")
         prompt_text.insert("1.0", cfg.get("system_prompt", ""))
-        prompt_text.pack(fill="both", expand=True, pady=(2, 8))
+        prompt_text.pack(fill="both", expand=True, pady=(2, 6))
+
+        # Автозапуск Windows
+        autostart_var = tk.BooleanVar(value=autostart.is_autostart_enabled())
+        chk_autostart = tk.Checkbutton(
+            scroll_frame,
+            text="🚀 Запускать Астрид при включении ПК (Автозапуск Windows)",
+            variable=autostart_var,
+            font=FONT_BOLD,
+            fg=TEXT_GREEN,
+            bg=BG_PANEL,
+            selectcolor=BG_DARK,
+            activebackground=BG_PANEL
+        )
+        chk_autostart.pack(anchor="w", pady=(4, 8))
 
         # Кнопка сохранения
         def save_settings():
@@ -800,6 +913,7 @@ class AstridUI:
             sp = prompt_text.get("1.0", "end").strip()
 
             self.core.update_settings(prov, k, m, u, sp)
+            autostart.set_autostart(autostart_var.get())
 
             if self.core.is_ai_ready():
                 self.status_lbl.config(text=f"● {prov.upper()} [{m}] ONLINE", fg=TEXT_GREEN)

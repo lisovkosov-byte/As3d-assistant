@@ -192,7 +192,9 @@ class AstridCore:
                     "messages": messages,
                     "temperature": 0.7
                 }
-                res = requests.post(endpoint, headers=headers, json=payload, timeout=20)
+                import urllib3
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                res = requests.post(endpoint, headers=headers, json=payload, timeout=20, verify=False)
                 if res.status_code != 200:
                     raise Exception(f"HTTP {res.status_code}: {res.text}")
                 data = res.json()
